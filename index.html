@@ -3194,7 +3194,81 @@ function renderMATRIZ(ind, container){
 
   if(ind.ind==="Tasa consultas de morbilidad por grupo etario"){
     renderConsultasEvolutionCard(ind, container);
+    renderConsultasAccumCard(ind, container);
   }
+}
+
+function renderConsultasAccumCard(ind, container){
+  const ndRec = REAL_CONSULTAS_ND[state.comuna];
+  if(!ndRec) return;
+  const allYears = Object.keys(ndRec).map(Number).sort((a,b)=>a-b);
+  if(!allYears.length) return;
+  const maxY = Math.min(Math.max(...allYears), MATRIZ_REAL_YEARS.max);
+  const windowYears = [];
+  for(let y=maxY-4; y<=maxY; y++){ if(ndRec[y] || ndRec[String(y)]) windowYears.push(y); }
+  if(windowYears.length===0) return;
+
+  const cols = ["Hombres","Mujeres","Total"];
+  const accumND = AGE_GROUPS.map(band => cols.map(c=>{
+    let sn=0, sd=0, any=false;
+    windowYears.forEach(y=>{
+      const yr = ndRec[y] || ndRec[String(y)];
+      const cell = yr && yr[band] && yr[band][c];
+      if(cell){ sn += cell.n; sd += cell.d; any = true; }
+    });
+    return any ? {n:sn, d:sd, rate: sd>0 ? sn/sd*100 : 0} : null;
+  }));
+  if(accumND.some(row=>row.some(c=>c==null))) return;
+
+  const totalColIdx = 2;
+  const colorableVals = accumND.map(row=>row.filter((_,ci)=>ci!==totalColIdx).map(c=>c.rate)).flat();
+  const maxV = Math.max(...colorableVals);
+  const minV = Math.min(...colorableVals);
+  function cellColor(v){
+    const t = (v-minV)/(maxV-minV+0.001);
+    const r = Math.round(238 - t*(238-11));
+    const g = Math.round(242 - t*(242-95));
+    const b = Math.round(247 - t*(247-122));
+    return `rgb(${r},${g},${b})`;
+  }
+  function cellText(v){ const t=(v-minV)/(maxV-minV+0.001); return t>0.55?'#fff':'#1C2530'; }
+
+  const rowsHtml = AGE_GROUPS.map((band,ri)=>{
+    const cellsHtml = cols.map((c,ci)=>{
+      const cell = accumND[ri][ci];
+      const isTotalCol = ci===totalColIdx;
+      const bg = isTotalCol ? '#EEF0F3' : cellColor(cell.rate);
+      const fg = isTotalCol ? '#1C2530' : cellText(cell.rate);
+      const style = isTotalCol ? `background:${bg};color:${fg};font-weight:600;` : `background:${bg};color:${fg}`;
+      const titleAttr = ` title="N (consultas, ${windowYears[0]}-${windowYears[windowYears.length-1]}): ${fmt(cell.n,0)}&#10;D (inscritos PIVF, suma anual): ${fmt(cell.d,0)}"`;
+      return `<td class="cell" style="${style};cursor:help;"${titleAttr}>${fmt(cell.rate,1)}</td>`;
+    }).join('');
+    return `<tr><td class="rowlbl">${band}</td>${cellsHtml}</tr>`;
+  }).join('');
+
+  const totalRow = cols.map((c,ci)=>{
+    let sn=0, sd=0;
+    AGE_GROUPS.forEach((band,ri)=>{ const cell = accumND[ri][ci]; sn+=cell.n; sd+=cell.d; });
+    const rate = sd>0 ? sn/sd*100 : 0;
+    const isTotalCol = ci===totalColIdx;
+    const bg = isTotalCol ? '#DCE2EA' : '#EAEFF5';
+    const titleAttr = ` title="N (consultas, ${windowYears[0]}-${windowYears[windowYears.length-1]}): ${fmt(sn,0)}&#10;D (inscritos PIVF, suma anual): ${fmt(sd,0)}"`;
+    return `<td class="cell" style="background:${bg};color:#1C2530;font-weight:700;cursor:help;"${titleAttr}>${fmt(rate,1)}</td>`;
+  }).join('');
+  const totalRowHtml = `<tr><td class="rowlbl" style="font-weight:700;">Total</td>${totalRow}</tr>`;
+
+  const card = document.createElement('div');
+  card.className = 'chart-card full';
+  card.innerHTML = `
+    <h3>Tasa consultas de morbilidad por grupo etario (acumulado ${windowYears[0]}-${windowYears[windowYears.length-1]})</h3>
+    <div class="sub">Desagregado por grupo etario · ${state.comuna} · unidad: consultas x100 inscritos PIVF · tasa de período: Σ consultas / Σ inscritos PIVF de los ${windowYears.length} años · pase el cursor sobre una celda para ver N/D</div>
+    <table class="matriz">
+      <thead><tr><th>Grupo</th>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${rowsHtml}${totalRowHtml}</tbody>
+    </table>
+    <div class="src-line">Fuente: ${ind.fuente} (tasa acumulada ${windowYears[0]}-${windowYears[windowYears.length-1]}: suma de numerador y denominador de cada año antes de dividir, no promedio de tasas anuales)</div>
+  `;
+  container.appendChild(card);
 }
 
 function renderConsultasEvolutionCard(ind, container){
@@ -3211,6 +3285,20 @@ function renderConsultasEvolutionCard(ind, container){
     return { sexo, data };
   });
   if(!series.some(s=>s.data.some(v=>v!=null))) return;
+
+  const ndRecEvol = REAL_CONSULTAS_ND[state.comuna];
+  const totalSeriesData = years.map(y=>{
+    const yr = ndRecEvol && (ndRecEvol[y] || ndRecEvol[String(y)]);
+    if(!yr) return null;
+    let sn=0, sd=0, any=false;
+    AGE_GROUPS.forEach(band=>{
+      const cell = yr[band] && yr[band]['Total'];
+      if(cell){ sn += cell.n; sd += cell.d; any = true; }
+    });
+    return (any && sd>0) ? sn/sd*100 : null;
+  });
+  const hasTotalEvol = totalSeriesData.some(v=>v!=null);
+  if(hasTotalEvol){ series.unshift({ sexo:'Total', data: totalSeriesData }); }
 
   const card = document.createElement('div');
   card.className = 'chart-card full';
