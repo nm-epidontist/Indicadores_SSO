@@ -4491,12 +4491,6 @@ function render(){
     note.style.cssText = 'background:var(--gold-pale);border-radius:6px;padding:10px 12px;margin:0 0 12px 0;font-size:12.5px;color:#8A6015;';
     note.innerHTML = `<b>Nota metodológica:</b> los indicadores de esta sección se calculan filtrando la base de egresos hospitalarios (EEHH) por <b>comuna de residencia del paciente</b>, sumando las 7 comunas del Servicio de Salud Osorno cuando se selecciona "Servicio de Salud Osorno (total)". No corresponden a la totalidad bruta de egresos registrados en los establecimientos de la red SSO: pueden excluir residentes de estas comunas atendidos fuera de la red, y no incluyen pacientes de otras comunas atendidos en hospitales de la red SSO. Al comparar con reportes institucionales de "egresos totales del hospital/red", los totales pueden diferir por este motivo. En el período 2015-2025, los egresos de residentes de las 7 comunas del SSO representan el <b>95,9%</b> del total de egresos registrados en los establecimientos de la red SSO (193.242 de 201.566 egresos).`;
     main.appendChild(note);
-    const shortcut = document.createElement('div');
-    shortcut.style.cssText = 'margin:0 0 12px 0;';
-    shortcut.innerHTML = `<button type="button" id="btn-ir-egresos-evitables" style="background:#0B2545;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:12.5px;cursor:pointer;">Ir a Egresos evitables (OE9 · Eficacia: Egresos) →</button>`;
-    main.appendChild(shortcut);
-    const shBtn = shortcut.querySelector ? shortcut.querySelector('#btn-ir-egresos-evitables') : null;
-    if(shBtn) shBtn.addEventListener('click', ()=>navigateToIndicator("Egresos evitables"));
   }
 
   if(kpis.length){
@@ -4551,6 +4545,14 @@ function render(){
       renderEgresosEdadBoxplotCard(grid);
       for(let k=bpStart; k<grid.children.length; k++) appendEvitablesNota(grid.children[k]);
     }
+  }
+  if(state.tema === "4. Morbilidad Hospitalaria"){
+    const shortcut = document.createElement('div');
+    shortcut.style.cssText = 'margin:0 0 12px 0;';
+    shortcut.innerHTML = `<button type="button" id="btn-ir-egresos-evitables" style="background:#0B2545;color:#fff;border:0;border-radius:6px;padding:8px 14px;font-size:12.5px;cursor:pointer;">Ir a Egresos evitables (OE9 · Eficacia: Egresos) →</button>`;
+    main.appendChild(shortcut);
+    const shBtn = shortcut.querySelector ? shortcut.querySelector('#btn-ir-egresos-evitables') : null;
+    if(shBtn) shBtn.addEventListener('click', ()=>navigateToIndicator("Egresos evitables"));
   }
 }
 
