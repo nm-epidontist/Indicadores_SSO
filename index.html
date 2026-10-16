@@ -3200,7 +3200,7 @@ function urgenciaProduccionNoteHTML(ind){
   if(ind.ind !== "Tasa de atención médica de urgencia según grupo etario" && ind.ind !== "Categorización de urgencia (C1 a C5)") return '';
   const gyoNote = ind.ind === "Tasa de atención médica de urgencia según grupo etario" ? `<div class="src-line" style="border-top:none;padding-top:0;margin-top:2px;">Excluye las atenciones médicas de urgencia gineco-obstétricas.</div>` : '';
   const catNote = ind.ind === "Categorización de urgencia (C1 a C5)" ? `<div class="src-line" style="border-top:none;padding-top:0;margin-top:2px;">Distribución sobre atenciones categorizadas en UEH, SAPU y SUR.</div>` : '';
-  return gyoNote + catNote + `<div class="src-line" style="border-top:none;padding-top:0;margin-top:2px;">Calculado a partir del REM comunal: da cuenta de las atenciones brindadas en esa comuna, sin poder distinguir el lugar de origen de la persona que consulta — tiene un enfoque de producción, no de contacto de la población de la comuna con el sistema.</div>`;
+  return gyoNote + catNote + `<div class="src-line" style="border-top:none;padding-top:0;margin-top:2px;">Calculado a partir del REM comunal: da cuenta de las atenciones brindadas en esa comuna, sin poder distinguir el lugar de origen de la persona que consulta.</div>`;
 }
 
 function renderMATRIZ(ind, container){
